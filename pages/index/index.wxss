@@ -1,0 +1,24 @@
+/* 页面级样式基本集中在 app.wxss，这里只放页面特有样式 */
+.chip.dis {
+  opacity: 0.35;
+}
+
+/* 自定义题量输入 */
+.num-input {
+  width: 200rpx;
+  text-align: right;
+  color: #111827;
+  font-size: 28rpx;
+}
+
+/* 标题输入（占满行内剩余空间） */
+.row-col {
+  flex-wrap: nowrap;
+}
+.title-input {
+  flex: 1;
+  margin-left: 24rpx;
+  text-align: right;
+  color: #111827;
+  font-size: 28rpx;
+}

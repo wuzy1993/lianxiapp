@@ -1,0 +1,159 @@
+<view class="page">
+
+  <view class="card">
+    <view class="row">
+      <text class="label">年级</text>
+      <picker mode="selector" range="{{gradeNames}}" value="{{gradeIndex}}" bindchange="onGrade">
+        <view class="value">{{gradeNames[gradeIndex]}} ▾</view>
+      </picker>
+    </view>
+
+    <view class="chips">
+      <view
+        wx:for="{{opList}}"
+        wx:key="key"
+        class="chip {{item.on ? 'on' : ''}}"
+        data-key="{{item.key}}"
+        bindtap="toggleOp"
+      >{{item.name}}</view>
+    </view>
+
+    <view class="row">
+      <text class="label">第一个数位数</text>
+      <picker mode="selector" range="{{[1, 2, 3, 4]}}" value="{{dA - 1}}" bindchange="onDigitA">
+        <view class="value">{{dA}} 位 ▾</view>
+      </picker>
+    </view>
+
+    <view class="row">
+      <text class="label">第二个数位数</text>
+      <picker mode="selector" range="{{[1, 2, 3, 4]}}" value="{{dB - 1}}" bindchange="onDigitB">
+        <view class="value">{{dB}} 位 ▾</view>
+      </picker>
+    </view>
+
+    <view class="row">
+      <text class="label">允许进位 / 退位</text>
+      <switch checked="{{carry}}" color="#4f46e5" bindchange="onCarry" />
+    </view>
+
+    <view class="row">
+      <text class="label">除法允许有余数</text>
+      <switch checked="{{remainder}}" color="#4f46e5" bindchange="onRemainder" />
+    </view>
+
+    <view class="row">
+      <text class="label">题目数量</text>
+      <picker mode="selector" range="{{counts}}" value="{{counts.indexOf(count) >= 0 ? counts.indexOf(count) : 0}}" bindchange="onCount">
+        <view class="value">{{count}} 题 ▾</view>
+      </picker>
+    </view>
+
+    <view class="row">
+      <text class="label">自定义题量</text>
+      <input
+        class="num-input"
+        type="number"
+        value="{{countInput}}"
+        placeholder="1–200"
+        bindblur="onCountInput"
+        bindconfirm="onCountInput"
+      />
+    </view>
+  </view>
+
+  <view class="card">
+    <view class="seg">
+      <view class="{{mode === 'horizontal' ? 'on' : ''}}" data-v="horizontal" bindtap="onMode">横式</view>
+      <view class="{{mode === 'vertical' ? 'on' : ''}}" data-v="vertical" bindtap="onMode">竖式留白</view>
+    </view>
+
+    <view class="row">
+      <text class="label">每行题数</text>
+      <view class="chips" style="padding:0">
+        <view
+          wx:for="{{[1, 2, 3, 4, 5]}}"
+          wx:key="*this"
+          class="chip {{cols === item ? 'on' : ''}} {{mode === 'vertical' && item > 4 ? 'dis' : ''}}"
+          data-v="{{item}}"
+          bindtap="onCols"
+        >{{item}}</view>
+      </view>
+    </view>
+
+    <view class="row">
+      <text class="label">行间距</text>
+      <picker mode="selector" range="{{densityNames}}" value="{{densityIndex}}" bindchange="onDensity">
+        <view class="value">{{densityNames[densityIndex]}} ▾</view>
+      </picker>
+    </view>
+
+    <view class="row row-col">
+      <text class="label">标题</text>
+      <input
+        class="title-input"
+        value="{{title}}"
+        placeholder="留空自动生成"
+        bindinput="onTitle"
+      />
+    </view>
+
+    <view class="row">
+      <text class="label">姓名 / 日期 / 得分栏</text>
+      <switch checked="{{showHeader}}" color="#4f46e5" bindchange="onShowHeader" />
+    </view>
+
+    <view class="row">
+      <text class="label">竖式书写区虚线框</text>
+      <switch checked="{{showGuide}}" color="#4f46e5" bindchange="onShowGuide" />
+    </view>
+
+    <view class="row">
+      <text class="label">附加参考答案页</text>
+      <switch checked="{{answers}}" color="#4f46e5" bindchange="onAnswers" />
+    </view>
+  </view>
+
+  <view class="card" wx:if="{{pageCount > 0}}">
+    <view class="row">
+      <text class="label">共 {{pageCount}} 页 · {{questionCount}} 题</text>
+      <view class="chips" style="padding:0" wx:if="{{pageCount > 1}}">
+        <view
+          wx:for="{{pageCount}}"
+          wx:key="*this"
+          class="chip {{previewPage === index ? 'on' : ''}}"
+          data-i="{{index}}"
+          bindtap="onSwitchPage"
+        >第{{index + 1}}页</view>
+      </view>
+    </view>
+    <image
+      wx:if="{{previewUrl}}"
+      src="{{previewUrl}}"
+      mode="widthFix"
+      style="width: 100%; border-radius: 8rpx;"
+      bindtap="previewImages"
+    />
+  </view>
+
+  <view class="btn btn-primary" bindtap="saveToAlbum">
+    {{busy ? '生成中…' : '生成 A4 图 · 保存到相册'}}
+  </view>
+  <view class="btn btn-plain" bindtap="exportPdf">
+    {{busyPdf ? '生成中…' : '导出 PDF（可预览 / 转发）'}}
+  </view>
+  <view class="btn btn-plain" wx:if="{{pdfPath}}" bindtap="sharePdf">把 PDF 发给朋友 / 电脑</view>
+  <view class="btn btn-plain" bindtap="showPrintHelp">怎么连 WiFi 打印机？</view>
+
+  <view class="footer-note">
+    <view>小程序无法直接向打印机发送打印指令。</view>
+    <view>PDF 可发到电脑微信打印；图片保存相册后用打印机厂商 App 打印。</view>
+  </view>
+
+  <!-- 离屏导出画布 -->
+  <canvas
+    type="2d"
+    id="sheet"
+    style="position: fixed; left: -9999px; top: 0; width: 350px; height: 495px;"
+  ></canvas>
+</view>

@@ -43,14 +43,14 @@
     </view>
 
     <view class="row">
-      <text class="label">题目数量</text>
+      <text class="label">每页题数</text>
       <picker mode="selector" range="{{counts}}" value="{{counts.indexOf(count) >= 0 ? counts.indexOf(count) : 0}}" bindchange="onCount">
         <view class="value">{{count}} 题 ▾</view>
       </picker>
     </view>
 
     <view class="row">
-      <text class="label">自定义题量</text>
+      <text class="label">自定义每页题数</text>
       <input
         class="num-input"
         type="number"
@@ -60,6 +60,27 @@
         bindconfirm="onCountInput"
       />
     </view>
+
+    <view class="row">
+      <text class="label">打印页数</text>
+      <picker mode="selector" range="{{pageList}}" value="{{pageList.indexOf(pages) >= 0 ? pageList.indexOf(pages) : 0}}" bindchange="onPages">
+        <view class="value">{{pages}} 页 ▾</view>
+      </picker>
+    </view>
+
+    <view class="row">
+      <text class="label">自定义页数</text>
+      <input
+        class="num-input"
+        type="number"
+        value="{{pagesInput}}"
+        placeholder="1–50"
+        bindblur="onPagesInput"
+        bindconfirm="onPagesInput"
+      />
+    </view>
+
+    <view class="hint-line">本次生成 {{pages}} 页，合计 {{pages * count}} 题</view>
   </view>
 
   <view class="card">
@@ -116,7 +137,7 @@
 
   <view class="card" wx:if="{{pageCount > 0}}">
     <view class="row">
-      <text class="label">共 {{pageCount}} 页 · {{questionCount}} 题</text>
+      <text class="label">合计 {{pageCount}} 页 · {{questionCount}} 题{{answers ? '（含答案页）' : ''}}</text>
       <view class="chips" style="padding:0" wx:if="{{pageCount > 1}}">
         <view
           wx:for="{{pageCount}}"

@@ -35,6 +35,9 @@ Page({
     counts: [20, 30, 40, 60, 100],
     count: 24,
     countInput: '',
+    pageList: [1, 2, 3, 5, 8, 10, 15, 20],
+    pages: 1,
+    pagesInput: '',
     densityNames: ['紧凑', '标准', '宽松'],
     densityValues: [0.85, 1, 1.25],
     densityIndex: 1,
@@ -75,7 +78,9 @@ Page({
       dB: d.dB,
       carry: d.carry,
       remainder: d.remainder,
-      count: d.count,
+      // 批量：每页 count 题 × pages 页
+      count: d.count * d.pages,
+      perPage: d.count,
       mode: d.mode,
       cols: d.cols,
       density: d.densityValues[d.densityIndex],
@@ -102,6 +107,8 @@ Page({
       dB: p.dB,
       count: p.count,
       countInput: '',
+      pages: 1,
+      pagesInput: '',
       mode: p.mode,
       cols: p.cols,
       densityIndex: 1
@@ -144,6 +151,23 @@ Page({
     if (isNaN(raw)) return;
     const v = Math.max(1, Math.min(200, raw));
     this.setData({ count: v, countInput: String(v) });
+    this.generate();
+  },
+
+  // 打印页数：批量生成 pages 页，每页都是新的一批题
+  onPages(e) {
+    const v = this.data.pageList[Number(e.detail.value)];
+    if (!v) return;
+    this.setData({ pages: v, pagesInput: '' });
+    this.generate();
+  },
+
+  // 自定义页数（1–50）
+  onPagesInput(e) {
+    const raw = parseInt(e.detail.value, 10);
+    if (isNaN(raw)) return;
+    const v = Math.max(1, Math.min(50, raw));
+    this.setData({ pages: v, pagesInput: String(v) });
     this.generate();
   },
 
@@ -260,8 +284,10 @@ Page({
     this.setData({ busy: true });
     wx.showLoading({ title: '生成图片中…', mask: true });
     const files = [];
+    const total = this.doc.pages.length;
     try {
-      for (let i = 0; i < this.doc.pages.length; i++) {
+      for (let i = 0; i < total; i++) {
+        wx.showLoading({ title: '生成第 ' + (i + 1) + '/' + total + ' 页…', mask: true });
         const f = await this.exportPage(i, EXPORT_DPI);
         files.push(f);
       }
@@ -319,7 +345,9 @@ Page({
     try {
       const fs = wx.getFileSystemManager();
       const pages = [];
-      for (let i = 0; i < this.doc.pages.length; i++) {
+      const total = this.doc.pages.length;
+      for (let i = 0; i < total; i++) {
+        wx.showLoading({ title: '生成 PDF ' + (i + 1) + '/' + total + ' 页…', mask: true });
         const tmp = await this.exportPage(i, EXPORT_DPI, 'jpg');
         const buf = fs.readFileSync(tmp);
         pages.push({

@@ -229,6 +229,7 @@
       carry: true,
       remainder: false,
       count: 40,
+      perPage: 0,
       mode: 'horizontal',
       cols: 4,
       density: 1,
@@ -247,7 +248,9 @@
       if (OPS[o]) ops.push(o);
     });
     cfg.ops = ops.length ? ops : ['add'];
-    cfg.count = clamp(Math.round(cfg.count || 40), 1, 200);
+    cfg.count = clamp(Math.round(cfg.count || 40), 1, 5000);
+    // perPage > 0 时启用批量模式：每页固定 perPage 道题（末页可少），总页数 = ceil(count/perPage)
+    cfg.perPage = clamp(Math.round(cfg.perPage || 0), 0, 200);
     cfg.dA = clamp(Math.round(cfg.dA || 2), 1, 4);
     cfg.dB = clamp(Math.round(cfg.dB || 1), 1, 4);
     var maxCols = cfg.mode === 'vertical' ? 4 : 5;
@@ -281,17 +284,40 @@
     var totalRows = Math.ceil(questions.length / cfg.cols);
 
     var pages = [];
-    var pageCount = Math.max(1, Math.ceil(totalRows / rowsPerPage));
-    for (var i = 0; i < pageCount; i++) {
-      var rows = Math.min(rowsPerPage, totalRows - i * rowsPerPage);
-      pages.push({
-        type: 'questions',
-        index: pages.length,
-        startRow: i * rowsPerPage,
-        rows: rows,
-        cols: cfg.cols,
-        rowH: Math.min(gridH / rows, baseRowH * 1.9)
-      });
+    if (cfg.perPage >= 1) {
+      // 批量模式：每页固定 perPage 道题，题目按下标切块
+      var pp = cfg.perPage;
+      var qPages = Math.max(1, Math.ceil(questions.length / pp));
+      for (var bi = 0; bi < qPages; bi++) {
+        var startQ = bi * pp;
+        var qs = Math.min(pp, questions.length - startQ);
+        var brows = Math.max(1, Math.ceil(qs / cfg.cols));
+        pages.push({
+          type: 'questions',
+          index: pages.length,
+          startRow: Math.round(startQ / cfg.cols),
+          startIdx: startQ,
+          endIdx: startQ + qs,
+          rows: brows,
+          cols: cfg.cols,
+          rowH: Math.min(gridH / brows, baseRowH * 1.9)
+        });
+      }
+    } else {
+      var rowsPerPage = Math.max(1, Math.floor(gridH / baseRowH));
+      var totalRows = Math.ceil(questions.length / cfg.cols);
+      var pageCount = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+      for (var i = 0; i < pageCount; i++) {
+        var rows = Math.min(rowsPerPage, totalRows - i * rowsPerPage);
+        pages.push({
+          type: 'questions',
+          index: pages.length,
+          startRow: i * rowsPerPage,
+          rows: rows,
+          cols: cfg.cols,
+          rowH: Math.min(gridH / rows, baseRowH * 1.9)
+        });
+      }
     }
 
     if (cfg.answers) {
@@ -428,10 +454,13 @@
         : clamp(rowH * 0.44, 3.8, 6.2);
       var padX = 4.2;
 
+      // 本页题目区间：[page.startIdx, page.endIdx)；非批量模式则到题目末尾
+      var pageEnd = page.endIdx != null ? page.endIdx : doc.questions.length;
       for (var r = 0; r < page.rows; r++) {
+        if (page.startIdx != null && page.startIdx + r * page.cols >= pageEnd) break;
         for (var c = 0; c < page.cols; c++) {
-          var idx = (page.startRow + r) * page.cols + c;
-          if (idx >= doc.questions.length) break;
+          var idx = (page.startIdx != null ? page.startIdx : page.startRow * page.cols) + r * page.cols + c;
+          if (idx >= pageEnd) break;
           var q = doc.questions[idx];
           var cx = gx + c * colW;
           var cy = gy + r * rowH;

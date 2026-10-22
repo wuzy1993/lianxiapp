@@ -22,3 +22,11 @@
   color: #111827;
   font-size: 28rpx;
 }
+
+/* 批量汇总提示 */
+.hint-line {
+  text-align: right;
+  color: #9ca3af;
+  font-size: 24rpx;
+  padding-top: 10rpx;
+}
